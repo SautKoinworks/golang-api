@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -16,6 +15,7 @@ func main() {
 	router.GET("/books/:id/:title", bookHandler)
 	router.GET("/query", queryHandler)
 	router.POST("/books", postBookHandler)
+	router.POST("/user", postUserHandler)
 
 	router.Run(":9999")
 }
@@ -53,9 +53,8 @@ func queryHandler(c *gin.Context) {
 }
 
 type BookInput struct {
-	Title    string
-	Price    int
-	SubTitle string `json:"sub_title"`
+	Title string `json:"title" binding:"required"`
+	Price int    `json:"price" binding:"required,number"`
 }
 
 func postBookHandler(c *gin.Context) {
@@ -64,14 +63,36 @@ func postBookHandler(c *gin.Context) {
 
 	err := c.ShouldBindJSON(&bookInput)
 	if err != nil {
-		log.Fatal(err)
-		fmt.Println("error tipe data")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg": "data salah",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"title":     bookInput.Title,
-		"price":     bookInput.Price,
-		"sub_title": bookInput.SubTitle,
+		"title": bookInput.Title,
+		"price": bookInput.Price,
 	})
+}
 
+type UserData struct {
+	Name string
+	Job  string
+	Age  int
+}
+
+func postUserHandler(c *gin.Context) {
+	var userData UserData
+
+	err := c.ShouldBindJSON(&userData)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"name": userData.Name,
+		"job":  userData.Job,
+		"age":  userData.Age,
+	})
 }
